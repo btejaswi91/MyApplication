@@ -1,154 +1,106 @@
 package dev.kotlinlang.mvidemo
 
+
+import ItemsListWithKeys
+import ItemsListWithoutKeys
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val viewModel: CartViewModel = viewModel()
-            LaunchedEffect(Unit) { viewModel.processIntent(CartIntent.LoadCart) }
-            CartScreen(viewModel)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CartScreen(viewModel: CartViewModel) {
-    val state by viewModel.state.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    // Handle side effects
-    LaunchedEffect(viewModel) {
-        viewModel.effect.collect { effect ->
-            when (effect) {
-                is CartEffect.ShowToast -> {
-                    snackbarHostState.showSnackbar(effect.message)
-                }
-                CartEffect.NavigateToCheckout -> {
-                    // Handle navigation
-                }
-            }
-        }
-    }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Shopping Cart (${state.items.size} items)") }
-            )
-        }
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            if (state.isLoading) {
-                LoadingIndicator()
-            } else {
-                CartContent(state, viewModel)
-            }
-
-            state.errorMessage?.let {
-                ErrorMessage(message = it)
-            }
+//            LayoutExample()
+            DrawingExample()
         }
     }
 }
 
 @Composable
-fun LoadingIndicator() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
+fun LayoutExample() {
+    var isShown: Boolean by remember {
+        mutableStateOf(value = false)
     }
-}
 
-@Composable
-fun CartContent(state: CartState, viewModel: CartViewModel) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        items(state.items) { item ->
-            CartItemRow(item) {
-                viewModel.processIntent(CartIntent.RemoveItem(it))
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
+    val offset: Int by animateIntAsState(if (isShown) 0 else 300, animationSpec = tween())
 
-@Composable
-fun CartItemRow(item: CartItem, onRemove: (String) -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Image placeholder
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .background(Color.LightGray)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(item.name, fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text("$${"%.2f".format(item.price)}", color = Color.Gray)
-                Text("Quantity: ${item.quantity}", color = Color.Gray)
-            }
-
-            IconButton(onClick = { onRemove(item.id) }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Remove",
-                    tint = Color.Red
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ErrorMessage(message: String) {
-    Box(
+    Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
     ) {
+        Button(
+            onClick = {
+                isShown = !isShown
+            }
+        ) {
+            Text(text = "Toggle Text")
+        }
+
+        // Unoptimized
+//        Text(
+//            text = "Hello #1",
+//            modifier = Modifier.offset(x = offset.dp, y = offset.dp)
+//        )
+
+        // Optimized
         Text(
-            text = message,
-            color = MaterialTheme.colorScheme.error,
-            fontSize = 18.sp
+            text = "Hello #2",
+            modifier = Modifier.offset {
+                // The `offsetX` state is read in the placement step
+                // of the layout phase when the offset is calculated.
+                // Changes in `offsetX` restart the layout.
+                IntOffset(offset, offset)
+            }
+        )
+    }
+}
+
+@Composable
+fun DrawingExample() {
+    var isShown: Boolean by remember {
+        mutableStateOf(value = false)
+    }
+
+    val opacity: Float by animateFloatAsState(if (isShown) 1f else 0.5f, animationSpec = tween())
+
+    Column(
+        modifier = Modifier
+    ) {
+        Button(
+            onClick = {
+                isShown = !isShown
+            }
+        ) {
+            Text(text = "Toggle Text")
+        }
+
+        // Unoptimized
+//        Text(
+//            text = "Hello World! #1",
+//            modifier = Modifier.alpha(opacity)
+//        )
+
+        // Optimized
+        Text(
+            text = "Hello World! #2",
+            modifier = Modifier.graphicsLayer { alpha = opacity }
         )
     }
 }
