@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.kotlinx.coroutines.android)
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

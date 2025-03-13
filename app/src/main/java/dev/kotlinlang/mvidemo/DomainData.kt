@@ -20,6 +20,7 @@ data class CartItem(
 sealed class CartIntent {
     object LoadCart : CartIntent()
     data class RemoveItem(val itemId: String) : CartIntent()
+    object Checkout : CartIntent()
 }
 
 data class CartState(
@@ -88,6 +89,10 @@ class CartViewModel : BaseViewModel<CartIntent, CartState, CartEffect>() {
         when (intent) {
             is CartIntent.LoadCart -> loadCart()
             is CartIntent.RemoveItem -> removeItem(intent.itemId)
+            is CartIntent.Checkout -> {
+                // Handle checkout by emitting the navigation effect
+                emitEffect(CartEffect.NavigateToCheckout)
+            }
         }
     }
 
